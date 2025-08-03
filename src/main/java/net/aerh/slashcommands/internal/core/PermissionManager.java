@@ -67,7 +67,7 @@ public class PermissionManager {
     }
 
     /**
-     * Prioritizes custom permission handlers over built-in Discord permission checking.
+     * Prioritises custom permission handlers over built-in Discord permission checking.
      * 
      * @param event the slash command interaction event
      * @param permission the permission string to resolve
