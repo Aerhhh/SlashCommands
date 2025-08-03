@@ -2,6 +2,7 @@ package net.aerh.slashcommands.internal.validation;
 
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.aerh.slashcommands.internal.utils.StringUtils;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.jetbrains.annotations.NotNull;
@@ -89,7 +90,8 @@ public class CommandValidator {
 
     private static void validateOption(Method method, Parameter param, SlashOption option, List<ValidationError> errors) {
         String paramName = param.getName();
-        String resolvedName = option.name().isEmpty() ? paramName : option.name();
+        String rawName = option.name().isEmpty() ? paramName : option.name();
+        String resolvedName = StringUtils.camelCaseToSnakeCase(rawName);
 
         validateName(method, resolvedName, "Option", paramName, errors);
         validateDescription(method, option.description(), "Option", paramName, errors);
@@ -287,6 +289,7 @@ public class CommandValidator {
             }
         }
     }
+
 
 
     /**
