@@ -2,6 +2,7 @@ package net.aerh.slashcommands.internal.core;
 
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.aerh.slashcommands.internal.utils.StringUtils;
 import net.aerh.slashcommands.internal.validation.OptionTypeMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 
@@ -32,39 +33,13 @@ public class CommandInfo {
             if (param.isAnnotationPresent(SlashOption.class)) {
                 SlashOption optionAnnotation = param.getAnnotation(SlashOption.class);
 
-                String optionName;
-                boolean nameInferred = optionAnnotation.name().isEmpty();
-
-                if (nameInferred) {
-                    optionName = camelCaseToSnakeCase(param.getName());
-                } else {
-                    optionName = optionAnnotation.name();
-                }
+                String optionName = optionAnnotation.name().isEmpty() ? param.getName() : optionAnnotation.name();
+                String convertedName = StringUtils.camelCaseToSnakeCase(optionName);
 
                 OptionType resolvedType = optionAnnotation.type() == OptionType.UNKNOWN ? OptionTypeMapping.inferOptionType(param.getType()) : optionAnnotation.type();
-                options.add(new OptionInfo(param, optionAnnotation, i, optionName, resolvedType));
+                options.add(new OptionInfo(param, optionAnnotation, i, convertedName, resolvedType));
             }
         }
-    }
-
-    private static String camelCaseToSnakeCase(String camelCase) {
-        if (camelCase == null || camelCase.isEmpty()) {
-            return camelCase;
-        }
-
-        StringBuilder result = new StringBuilder();
-        result.append(Character.toLowerCase(camelCase.charAt(0)));
-
-        for (int i = 1; i < camelCase.length(); i++) {
-            char current = camelCase.charAt(i);
-            if (Character.isUpperCase(current)) {
-                result.append('_').append(Character.toLowerCase(current));
-            } else {
-                result.append(current);
-            }
-        }
-
-        return result.toString();
     }
 
     /**
