@@ -4,6 +4,8 @@ import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.aerh.slashcommands.internal.validation.OptionTypeMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -15,6 +17,8 @@ import java.util.List;
  * This class is used internally by the framework to store and manage command metadata.
  */
 public class CommandInfo {
+    private static final Logger logger = LoggerFactory.getLogger(CommandInfo.class);
+    
     private final Object instance;
     private final Method method;
     private final SlashCommand annotation;
@@ -32,17 +36,19 @@ public class CommandInfo {
             if (param.isAnnotationPresent(SlashOption.class)) {
                 SlashOption optionAnnotation = param.getAnnotation(SlashOption.class);
 
-                String optionName;
                 boolean nameInferred = optionAnnotation.name().isEmpty();
+                String optionName = nameInferred ? param.getName() : optionAnnotation.name();
+                String convertedName = camelCaseToSnakeCase(optionName);
 
-                if (nameInferred) {
-                    optionName = camelCaseToSnakeCase(param.getName());
-                } else {
-                    optionName = optionAnnotation.name();
+                if (!nameInferred && !optionName.equals(convertedName)) {
+                    logger.warn("Option name '{}' in parameter '{}' in method '{}' does not conform to Discord Slash Option standards. " +
+                               "Discord requires option names to be lowercase with underscores/hyphens only. " +
+                               "This has been automatically converted to '{}' but may break in future versions.",
+                               optionName, param.getName(), method.getName(), convertedName);
                 }
 
                 OptionType resolvedType = optionAnnotation.type() == OptionType.UNKNOWN ? OptionTypeMapping.inferOptionType(param.getType()) : optionAnnotation.type();
-                options.add(new OptionInfo(param, optionAnnotation, i, optionName, resolvedType));
+                options.add(new OptionInfo(param, optionAnnotation, i, convertedName, resolvedType));
             }
         }
     }
