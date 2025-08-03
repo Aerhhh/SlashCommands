@@ -6,7 +6,7 @@
 
     <groupId>net.aerh</groupId>
     <artifactId>slashcommands</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>Discord Slash Command Framework</name>
     <description>An annotation-based Discord Slash Command framework for JDA</description>
     <url>https://github.com/Aerhhh/SlashCommands</url>
