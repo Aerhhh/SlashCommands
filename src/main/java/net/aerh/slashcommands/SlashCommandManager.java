@@ -166,7 +166,9 @@ public class SlashCommandManager extends ListenerAdapter {
     public void onReady(@NotNull ReadyEvent event) {
         if (jda == null) {
             jda = event.getJDA();
-            jda.addEventListener(this);
+            if (!jda.getEventManager().getRegisteredListeners().contains(this)) {
+                jda.addEventListener(this);
+            }
         }
 
         registerCommandsWithJDA();

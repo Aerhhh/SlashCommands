@@ -114,6 +114,7 @@ public class SlashCommandHandler implements InteractionHandler {
             // Custom error handler for slash commands
             if (!event.isAcknowledged()) {
                 event.reply("An error occurred while executing the command.").setEphemeral(true).queue();
+                logger.error("Error executing command '{}': {}", cmd.getCommandName(), error.getMessage(), error);
             }
         });
 
