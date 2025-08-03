@@ -290,8 +290,6 @@ public class CommandValidator {
         }
     }
 
-
-
     /**
      * Represents a validation error found in a slash command method.
      *

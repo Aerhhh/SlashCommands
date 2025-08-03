@@ -16,7 +16,6 @@ import java.util.List;
  * This class is used internally by the framework to store and manage command metadata.
  */
 public class CommandInfo {
-
     private final Object instance;
     private final Method method;
     private final SlashCommand annotation;
