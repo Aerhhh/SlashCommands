@@ -5,8 +5,6 @@ import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.aerh.slashcommands.internal.utils.StringUtils;
 import net.aerh.slashcommands.internal.validation.OptionTypeMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
