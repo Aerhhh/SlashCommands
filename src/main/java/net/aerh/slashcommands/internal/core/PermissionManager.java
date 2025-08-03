@@ -52,27 +52,33 @@ public class PermissionManager {
      * @return the permission check result
      */
     public PermissionChecker.PermissionResult checkPermissions(SlashCommandInteractionEvent event, String[] requiredPermissions) {
-        PermissionChecker.PermissionResult result = PermissionChecker.checkPermissions(event, requiredPermissions);
+        if (requiredPermissions == null) {
+            return PermissionChecker.PermissionResult.allowed();
+        }
 
-        if (!result.wasSuccessful()) {
-            for (String permission : requiredPermissions) {
-                for (PermissionHandler handler : handlers) {
-                    if (handler.canHandle(permission)) {
-                        PermissionChecker.PermissionResult customResult = handler.checkPermission(event, permission);
-
-                        if (!customResult.wasSuccessful()) {
-                            return customResult;
-                        }
-                    }
-                }
-
-                if (permission.equals(result.getFailedPermission())) {
-                    return result;
-                }
+        for (String permission : requiredPermissions) {
+            PermissionChecker.PermissionResult result = resolvePermission(event, permission);
+            if (!result.wasSuccessful()) {
+                return result;
             }
         }
 
-        return result;
+        return PermissionChecker.PermissionResult.allowed();
+    }
+
+    /**
+     * Prioritizes custom permission handlers over built-in Discord permission checking.
+     * 
+     * @param event the slash command interaction event
+     * @param permission the permission string to resolve
+     * @return the permission check result from the first capable handler, or built-in check if none found
+     */
+    private PermissionChecker.PermissionResult resolvePermission(SlashCommandInteractionEvent event, String permission) {
+        return handlers.stream()
+                .filter(handler -> handler.canHandle(permission))
+                .findFirst()
+                .map(handler -> handler.checkPermission(event, permission))
+                .orElseGet(() -> PermissionChecker.checkPermissions(event, new String[]{permission}));
     }
 
     /**
