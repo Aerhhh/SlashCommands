@@ -18,8 +18,7 @@ import java.util.List;
  * This class is used internally by the framework to store and manage command metadata.
  */
 public class CommandInfo {
-    private static final Logger logger = LoggerFactory.getLogger(CommandInfo.class);
-    
+
     private final Object instance;
     private final Method method;
     private final SlashCommand annotation;
