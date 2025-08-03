@@ -18,7 +18,7 @@ This package is available through GitHub Packages. For the most up-to-date insta
 ****Gradle:**
 ```gradle
 implementation 'net.aerh:slashcommands:VERSION'
-```**
+```
 
 ## Features
 
