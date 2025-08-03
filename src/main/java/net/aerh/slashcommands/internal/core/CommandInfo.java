@@ -37,16 +37,8 @@ public class CommandInfo {
             if (param.isAnnotationPresent(SlashOption.class)) {
                 SlashOption optionAnnotation = param.getAnnotation(SlashOption.class);
 
-                boolean nameInferred = optionAnnotation.name().isEmpty();
-                String optionName = nameInferred ? param.getName() : optionAnnotation.name();
+                String optionName = optionAnnotation.name().isEmpty() ? param.getName() : optionAnnotation.name();
                 String convertedName = StringUtils.camelCaseToSnakeCase(optionName);
-
-                if (!nameInferred && !optionName.equals(convertedName)) {
-                    logger.warn("Option name '{}' in parameter '{}' in method '{}' does not conform to Discord Slash Option standards. " +
-                               "Discord requires option names to be lowercase with underscores/hyphens only. " +
-                               "This has been automatically converted to '{}' but may break in future versions.",
-                               optionName, param.getName(), method.getName(), convertedName);
-                }
 
                 OptionType resolvedType = optionAnnotation.type() == OptionType.UNKNOWN ? OptionTypeMapping.inferOptionType(param.getType()) : optionAnnotation.type();
                 options.add(new OptionInfo(param, optionAnnotation, i, convertedName, resolvedType));
