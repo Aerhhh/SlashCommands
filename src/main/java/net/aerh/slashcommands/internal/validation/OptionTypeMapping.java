@@ -95,7 +95,7 @@ public class OptionTypeMapping {
             }
         }
 
-        if (className.contains("Channel") || fullClassName.contains("channel")) {
+        if (GuildChannel.class.isAssignableFrom(parameterType)) {
             return OptionType.CHANNEL;
         }
 
@@ -127,8 +127,7 @@ public class OptionTypeMapping {
             return true;
         }
 
-        return optionType == OptionType.CHANNEL &&
-                (className.contains("Channel") || fullClassName.contains("channel"));
+        return optionType == OptionType.CHANNEL && GuildChannel.class.isAssignableFrom(parameterType);
     }
 
     /**
