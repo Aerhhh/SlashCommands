@@ -1,6 +1,7 @@
 package net.aerh.slashcommands.internal.execution.resolvers;
 
 import net.aerh.slashcommands.internal.core.CommandInfo;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -61,7 +62,13 @@ public class SlashCommandArgumentResolver implements ArgumentResolver<SlashComma
             case STRING -> event.getOption(optionName, "", OptionMapping::getAsString);
             case INTEGER -> event.getOption(optionName, 0, OptionMapping::getAsInt);
             case BOOLEAN -> event.getOption(optionName, false, OptionMapping::getAsBoolean);
-            case USER -> event.getOption(optionName, OptionMapping::getAsUser);
+            case USER -> {
+                if (Member.class.isAssignableFrom(optionInfo.parameter().getType())) {
+                    yield event.isFromGuild() ? event.getOption(optionName, OptionMapping::getAsMember) : null;
+                } else {
+                    yield event.getOption(optionName, OptionMapping::getAsUser);
+                }
+            }
             case CHANNEL -> event.getOption(optionName, OptionMapping::getAsChannel);
             case ROLE -> event.getOption(optionName, OptionMapping::getAsRole);
             case MENTIONABLE -> event.getOption(optionName, OptionMapping::getAsMentionable);
