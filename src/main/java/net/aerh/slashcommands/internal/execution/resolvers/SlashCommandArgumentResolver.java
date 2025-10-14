@@ -59,9 +59,9 @@ public class SlashCommandArgumentResolver implements ArgumentResolver<SlashComma
         OptionType optionType = optionInfo.resolvedType();
 
         return switch (optionType) {
-            case STRING -> event.getOption(optionName, "", OptionMapping::getAsString);
-            case INTEGER -> event.getOption(optionName, 0, OptionMapping::getAsInt);
-            case BOOLEAN -> event.getOption(optionName, false, OptionMapping::getAsBoolean);
+            case STRING -> event.getOption(optionName, OptionMapping::getAsString);
+            case INTEGER -> event.getOption(optionName, OptionMapping::getAsInt);
+            case BOOLEAN -> event.getOption(optionName, OptionMapping::getAsBoolean);
             case USER -> {
                 if (Member.class.isAssignableFrom(optionInfo.parameter().getType())) {
                     yield event.isFromGuild() ? event.getOption(optionName, OptionMapping::getAsMember) : null;
@@ -72,7 +72,7 @@ public class SlashCommandArgumentResolver implements ArgumentResolver<SlashComma
             case CHANNEL -> event.getOption(optionName, OptionMapping::getAsChannel);
             case ROLE -> event.getOption(optionName, OptionMapping::getAsRole);
             case MENTIONABLE -> event.getOption(optionName, OptionMapping::getAsMentionable);
-            case NUMBER -> event.getOption(optionName, 0.0, OptionMapping::getAsDouble);
+            case NUMBER -> event.getOption(optionName, OptionMapping::getAsDouble);
             case ATTACHMENT -> event.getOption(optionName, OptionMapping::getAsAttachment);
             default -> null;
         };
