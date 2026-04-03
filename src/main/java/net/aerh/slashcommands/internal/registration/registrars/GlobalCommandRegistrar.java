@@ -17,13 +17,17 @@ public class GlobalCommandRegistrar implements CommandRegistrar {
     @Override
     public void registerCommands(JDA jda, List<SlashCommandData> commands) {
         if (commands.isEmpty()) {
-            logger.info("No global commands to register");
+            logger.info("No global commands configured, clearing any stale global commands");
+            jda.updateCommands().queue(
+                    success -> logger.info("Successfully cleared all global commands"),
+                    error -> logger.error("Failed to clear global commands: {}", error.getMessage())
+            );
             return;
         }
 
-        logger.info("Registering {} global commands", commands.size());
+        logger.info("Registering {} global command(s)", commands.size());
         jda.updateCommands().addCommands(commands).queue(
-                success -> logger.info("Successfully registered {} global commands", commands.size()),
+                success -> logger.info("Successfully registered {} global command(s)", commands.size()),
                 error -> logger.error("Failed to register global commands: {}", error.getMessage())
         );
     }

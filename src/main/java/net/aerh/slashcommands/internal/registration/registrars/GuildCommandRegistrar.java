@@ -17,19 +17,25 @@ public class GuildCommandRegistrar implements CommandRegistrar {
 
     @Override
     public void registerCommands(JDA jda, List<SlashCommandData> commands) {
-        if (commands.isEmpty()) {
-            logger.info("No guild-only commands to register");
-            return;
-        }
-
         List<Guild> guilds = jda.getGuilds();
-        logger.info("Registering {} guild-only commands in all {} guilds", commands.size(), guilds.size());
 
         if (guilds.isEmpty()) {
             logger.warn("No guilds found to register commands in. Commands will not be registered.");
             return;
         }
 
+        if (commands.isEmpty()) {
+            logger.info("No guild commands configured, clearing any stale guild commands in {} guild(s)", guilds.size());
+            for (Guild guild : guilds) {
+                guild.updateCommands().queue(
+                        success -> logger.info("Successfully cleared all guild commands in {}", guild.getName()),
+                        error -> logger.error("Failed to clear guild commands in {}: {}", guild.getName(), error.getMessage())
+                );
+            }
+            return;
+        }
+
+        logger.info("Registering {} guild-only command(s) in {} guild(s)", commands.size(), guilds.size());
         for (Guild guild : guilds) {
             guild.updateCommands().addCommands(commands).queue(
                     success -> logger.info("Successfully registered {} guild-only commands in {}", commands.size(), guild.getName()),
