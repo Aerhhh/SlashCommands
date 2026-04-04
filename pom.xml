@@ -20,11 +20,23 @@
     </distributionManagement>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
+        <dependency>
+            <groupId>com.github.SkyBlock-Nerds</groupId>
+            <artifactId>Marmalade</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
