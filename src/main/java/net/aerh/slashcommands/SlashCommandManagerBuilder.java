@@ -4,6 +4,7 @@ import net.aerh.slashcommands.api.permissions.PermissionHandler;
 import net.aerh.slashcommands.internal.core.PermissionManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.hypixel.nerdbot.marmalade.pattern.Builder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +27,7 @@ import java.util.List;
  *     .build();
  * }</pre>
  */
-public class SlashCommandManagerBuilder {
+public class SlashCommandManagerBuilder extends Builder<SlashCommandManager> {
     private final List<Object> commandInstances = new ArrayList<>();
     private final List<String> packagesToScan = new ArrayList<>();
     private JDA jda;
@@ -139,41 +140,13 @@ public class SlashCommandManagerBuilder {
     }
 
     /**
-     * Builds and configures the SlashCommandManager.
-     *
-     * @return the configured SlashCommandManager instance
-     * @throws IllegalStateException if validation fails
-     */
-    public SlashCommandManager build() {
-        validateConfiguration();
-
-        SlashCommandManager manager = new SlashCommandManager(permissionManager);
-
-        // Register configured commands and packages
-        if (!commandInstances.isEmpty()) {
-            manager.registerCommandsFromBuilder(commandInstances.toArray());
-        }
-
-        for (String packageName : packagesToScan) {
-            manager.scanPackageFromBuilder(packageName);
-        }
-
-        // Set up JDA
-        if (jda != null) {
-            manager.setJDA(jda);
-        } else if (jdaBuilder != null) {
-            jdaBuilder.addEventListeners(manager);
-        }
-
-        return manager;
-    }
-
-    /**
-     * Validates the builder configuration before building.
+     * Validates the builder configuration before construction.
+     * Checks that a JDA source, at least one command source, and a permission manager are all present.
      *
      * @throws IllegalStateException if configuration is invalid
      */
-    private void validateConfiguration() {
+    @Override
+    protected void validate() {
         if (jda == null && jdaBuilder == null) {
             throw new IllegalStateException("Either JDA instance or JDABuilder must be provided using withJDA() or withJDABuilder()");
         }
@@ -197,5 +170,33 @@ public class SlashCommandManagerBuilder {
         if (permissionManager == null) {
             throw new IllegalStateException("Permission manager cannot be null");
         }
+    }
+
+    /**
+     * Constructs the SlashCommandManager from the validated builder state.
+     *
+     * @return the configured SlashCommandManager instance
+     */
+    @Override
+    protected SlashCommandManager construct() {
+        SlashCommandManager manager = new SlashCommandManager(permissionManager);
+
+        // Register configured commands and packages
+        if (!commandInstances.isEmpty()) {
+            manager.registerCommandsFromBuilder(commandInstances.toArray());
+        }
+
+        for (String packageName : packagesToScan) {
+            manager.scanPackageFromBuilder(packageName);
+        }
+
+        // Set up JDA
+        if (jda != null) {
+            manager.setJDA(jda);
+        } else if (jdaBuilder != null) {
+            jdaBuilder.addEventListeners(manager);
+        }
+
+        return manager;
     }
 }
