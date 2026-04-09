@@ -36,6 +36,35 @@ public class GuildCommandRegistrar implements CommandRegistrar {
         }
 
         logger.info("Registering {} guild-only command(s) in {} guild(s)", commands.size(), guilds.size());
+        for (SlashCommandData cmd : commands) {
+            StringBuilder tree = new StringBuilder();
+            tree.append("/").append(cmd.getName());
+            if (!cmd.getDescription().isEmpty()) {
+                tree.append(" - ").append(cmd.getDescription());
+            }
+            for (var sub : cmd.getSubcommands()) {
+                tree.append("\n  ├── ").append(sub.getName());
+                for (var opt : sub.getOptions()) {
+                    tree.append("\n  │   ├── ").append(opt.getName())
+                            .append(opt.isRequired() ? " (required)" : "");
+                }
+            }
+            for (var group : cmd.getSubcommandGroups()) {
+                tree.append("\n  ├── [").append(group.getName()).append("]");
+                for (var sub : group.getSubcommands()) {
+                    tree.append("\n  │   ├── ").append(sub.getName());
+                    for (var opt : sub.getOptions()) {
+                        tree.append("\n  │   │   ├── ").append(opt.getName())
+                                .append(opt.isRequired() ? " (required)" : "");
+                    }
+                }
+            }
+            for (var opt : cmd.getOptions()) {
+                tree.append("\n  ├── ").append(opt.getName())
+                        .append(opt.isRequired() ? " (required)" : "");
+            }
+            logger.info("Command tree:\n{}", tree);
+        }
         for (Guild guild : guilds) {
             guild.updateCommands().addCommands(commands).queue(
                     success -> logger.info("Successfully registered {} guild-only commands in {}", commands.size(), guild.getName()),
