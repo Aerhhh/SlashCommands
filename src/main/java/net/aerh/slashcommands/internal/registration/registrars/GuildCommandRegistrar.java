@@ -36,9 +36,9 @@ public class GuildCommandRegistrar implements CommandRegistrar {
         }
 
         logger.info("Registering {} guild-only command(s) in {} guild(s)", commands.size(), guilds.size());
+        StringBuilder tree = new StringBuilder("Guild command tree:");
         for (SlashCommandData cmd : commands) {
-            StringBuilder tree = new StringBuilder();
-            tree.append("/").append(cmd.getName());
+            tree.append("\n/").append(cmd.getName());
             if (!cmd.getDescription().isEmpty()) {
                 tree.append(" - ").append(cmd.getDescription());
             }
@@ -63,8 +63,8 @@ public class GuildCommandRegistrar implements CommandRegistrar {
                 tree.append("\n  ├── ").append(opt.getName())
                         .append(opt.isRequired() ? " (required)" : "");
             }
-            logger.info("Command tree:\n{}", tree);
         }
+        logger.info("{}", tree);
         for (Guild guild : guilds) {
             guild.updateCommands().addCommands(commands).queue(
                     success -> logger.info("Successfully registered {} guild-only commands in {}", commands.size(), guild.getName()),
