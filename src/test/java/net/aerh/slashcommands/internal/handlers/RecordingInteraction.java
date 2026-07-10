@@ -2,6 +2,7 @@ package net.aerh.slashcommands.internal.handlers;
 
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 
@@ -45,6 +46,10 @@ final class RecordingInteraction {
             case "editOriginal" -> {
                 calls.add("editOriginal(" + args[0] + ")");
                 yield chainRecordingAction(WebhookMessageEditAction.class);
+            }
+            case "sendMessage" -> {
+                calls.add("sendMessage(" + args[0] + ")");
+                yield chainRecordingAction(WebhookMessageCreateAction.class);
             }
             case "toString" -> "RecordingInteractionHook";
             default -> throw new UnsupportedOperationException("Unexpected call: " + method.getName());

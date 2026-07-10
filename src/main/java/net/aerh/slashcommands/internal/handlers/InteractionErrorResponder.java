@@ -31,4 +31,23 @@ final class InteractionErrorResponder {
             event.reply(message).setEphemeral(true).queue();
         }
     }
+
+    /**
+     * Replies ephemerally, or sends an ephemeral followup message when the interaction was
+     * already acknowledged.
+     * <p>
+     * Suitable for interactions that are usually acknowledged via {@code deferEdit} (buttons,
+     * select menus), where editing the original response would overwrite the message the
+     * component is attached to.
+     *
+     * @param event   the interaction to respond to
+     * @param message the error message to show the user
+     */
+    static void replyOrFollowUp(IReplyCallback event, String message) {
+        if (event.isAcknowledged()) {
+            event.getHook().sendMessage(message).setEphemeral(true).queue();
+        } else {
+            event.reply(message).setEphemeral(true).queue();
+        }
+    }
 }
