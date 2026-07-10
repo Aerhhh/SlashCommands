@@ -144,11 +144,7 @@ public class SlashCommandHandler implements InteractionHandler {
      * @param event the interaction to respond to
      */
     static void respondWithGenericError(IReplyCallback event) {
-        if (event.isAcknowledged()) {
-            event.getHook().editOriginal(GENERIC_ERROR_MESSAGE).queue();
-        } else {
-            event.reply(GENERIC_ERROR_MESSAGE).setEphemeral(true).queue();
-        }
+        InteractionErrorResponder.replyOrEditOriginal(event, GENERIC_ERROR_MESSAGE);
     }
 
     @Override
