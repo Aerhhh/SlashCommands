@@ -8,6 +8,7 @@ import net.aerh.slashcommands.internal.execution.CommandExecutor;
 import net.aerh.slashcommands.internal.execution.ExecutableSlashCommand;
 import net.aerh.slashcommands.internal.execution.resolvers.SlashCommandArgumentResolver;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SlashCommandHandler implements InteractionHandler {
     private static final Logger logger = LoggerFactory.getLogger(SlashCommandHandler.class);
+    private static final String GENERIC_ERROR_MESSAGE = "An error occurred while executing the command.";
 
     private final SlashCommandRegistry registry;
     private final PermissionManager permissionManager;
@@ -110,13 +112,7 @@ public class SlashCommandHandler implements InteractionHandler {
         Object[] args = argumentResolver.prepareArguments(commandInfo, event);
         ExecutableSlashCommand command = new ExecutableSlashCommand(commandInfo, event, args);
 
-        boolean success = commandExecutor.execute(command, (cmd, error) -> {
-            // Custom error handler for slash commands
-            if (!event.isAcknowledged()) {
-                event.reply("An error occurred while executing the command.").setEphemeral(true).queue();
-                logger.error("Error executing command '{}': {}", cmd.getCommandName(), error.getMessage(), error);
-            }
-        });
+        boolean success = commandExecutor.execute(command, (cmd, error) -> respondWithGenericError(event));
 
         if (!success) {
             // Additional error handling if needed
@@ -135,9 +131,23 @@ public class SlashCommandHandler implements InteractionHandler {
     private void handleCommandError(SlashCommandInteractionEvent event, String commandName, String subcommandName, Exception e) {
         String fullCommandName = subcommandName != null ? commandName + " " + subcommandName : commandName;
         logger.error("Error executing command '{}': {}", fullCommandName, e.getMessage(), e);
+        respondWithGenericError(event);
+    }
 
-        if (!event.isAcknowledged()) {
-            event.reply("An error occurred while executing the command.").setEphemeral(true).queue();
+    /**
+     * Sends a generic error message to the user for a failed interaction.
+     * <p>
+     * If the interaction was already acknowledged (for example via {@code deferReply}), the original
+     * response is edited so the user is not left on a permanent "thinking" state. Otherwise an
+     * ephemeral reply is sent.
+     *
+     * @param event the interaction to respond to
+     */
+    static void respondWithGenericError(IReplyCallback event) {
+        if (event.isAcknowledged()) {
+            event.getHook().editOriginal(GENERIC_ERROR_MESSAGE).queue();
+        } else {
+            event.reply(GENERIC_ERROR_MESSAGE).setEphemeral(true).queue();
         }
     }
 
