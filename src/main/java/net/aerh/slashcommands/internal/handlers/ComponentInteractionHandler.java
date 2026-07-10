@@ -3,7 +3,9 @@ package net.aerh.slashcommands.internal.handlers;
 import net.aerh.slashcommands.internal.core.SlashCommandRegistry;
 import net.aerh.slashcommands.internal.execution.resolvers.ComponentArgumentResolver;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ComponentInteractionHandler implements InteractionHandler {
     private static final Logger logger = LoggerFactory.getLogger(ComponentInteractionHandler.class);
+    private static final String GENERIC_ERROR_MESSAGE = "An error occurred while handling the interaction.";
 
     private final SlashCommandRegistry registry;
     private final ComponentArgumentResolver argumentResolver;
@@ -68,19 +71,28 @@ public class ComponentInteractionHandler implements InteractionHandler {
         componentInfo.method().invoke(componentInfo.instance(), args);
     }
 
-    private void handleComponentError(Object event, String componentId, Exception e) {
+    private void handleComponentError(GenericComponentInteractionCreateEvent event, String componentId, Exception e) {
         logger.error("Error handling component interaction '{}': {}", componentId, e.getMessage(), e);
 
-        // Check if the event has an acknowledge method and hasn't been acknowledged
         try {
-            if (event instanceof ButtonInteractionEvent buttonEvent && !buttonEvent.isAcknowledged()) {
-                buttonEvent.reply("An error occurred while handling the interaction.").setEphemeral(true).queue();
-            } else if (event instanceof StringSelectInteractionEvent selectEvent && !selectEvent.isAcknowledged()) {
-                selectEvent.reply("An error occurred while handling the interaction.").setEphemeral(true).queue();
-            }
+            respondWithGenericError(event);
         } catch (Exception replyException) {
             logger.error("Failed to send error reply for component '{}': {}", componentId, replyException.getMessage());
         }
+    }
+
+    /**
+     * Sends a generic error message to the user for a failed component interaction.
+     * <p>
+     * Component interactions are typically acknowledged via {@code deferEdit}, where editing the
+     * original response would overwrite the message the component is attached to. If the
+     * interaction was already acknowledged, an ephemeral followup message is sent instead of
+     * editing; otherwise an ephemeral reply is sent.
+     *
+     * @param event the interaction to respond to
+     */
+    static void respondWithGenericError(IReplyCallback event) {
+        InteractionErrorResponder.replyOrFollowUp(event, GENERIC_ERROR_MESSAGE);
     }
 
     @Override

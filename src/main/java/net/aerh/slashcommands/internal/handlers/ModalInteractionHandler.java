@@ -3,6 +3,7 @@ package net.aerh.slashcommands.internal.handlers;
 import net.aerh.slashcommands.internal.core.SlashCommandRegistry;
 import net.aerh.slashcommands.internal.execution.resolvers.ModalArgumentResolver;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ModalInteractionHandler implements InteractionHandler {
     private static final Logger logger = LoggerFactory.getLogger(ModalInteractionHandler.class);
+    private static final String GENERIC_ERROR_MESSAGE = "An error occurred while handling the modal submission.";
 
     private final SlashCommandRegistry registry;
     private final ModalArgumentResolver argumentResolver;
@@ -48,10 +50,20 @@ public class ModalInteractionHandler implements InteractionHandler {
 
     private void handleModalError(ModalInteractionEvent event, String modalId, Exception e) {
         logger.error("Error handling modal interaction '{}': {}", modalId, e.getMessage(), e);
+        respondWithGenericError(event);
+    }
 
-        if (!event.isAcknowledged()) {
-            event.reply("An error occurred while handling the modal submission.").setEphemeral(true).queue();
-        }
+    /**
+     * Sends a generic error message to the user for a failed modal submission.
+     * <p>
+     * If the interaction was already acknowledged (for example via {@code deferReply}), the original
+     * response is edited so the user is not left on a permanent "thinking" state. Otherwise an
+     * ephemeral reply is sent.
+     *
+     * @param event the interaction to respond to
+     */
+    static void respondWithGenericError(IReplyCallback event) {
+        InteractionErrorResponder.replyOrEditOriginal(event, GENERIC_ERROR_MESSAGE);
     }
 
     @Override
