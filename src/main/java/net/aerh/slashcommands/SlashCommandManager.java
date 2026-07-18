@@ -22,6 +22,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Main manager class for Discord slash commands using JDA.
  * Uses object-oriented design principles with separated concerns and dependency injection.
@@ -45,6 +49,13 @@ import org.slf4j.LoggerFactory;
  *     .scanPackage("com.example.commands")
  *     .build();
  * }</pre>
+ *
+ * <p>Command, button, string-select and modal handlers are dispatched on a worker thread pool
+ * rather than the JDA event thread, so a handler that blocks (for example on
+ * {@code RestAction.complete()}) cannot stall gateway event processing. Autocomplete is answered
+ * inline on the event thread because it is time-sensitive and expected to be non-blocking. Supply a
+ * custom pool via {@link SlashCommandManagerBuilder#withCommandExecutor(ExecutorService)}; the
+ * default is a daemon-threaded cached pool that is shut down when JDA shuts down.
  */
 public class SlashCommandManager extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(SlashCommandManager.class);
@@ -56,16 +67,28 @@ public class SlashCommandManager extends ListenerAdapter {
     private final AutocompleteHandler autocompleteHandler;
     private final ComponentInteractionHandler componentHandler;
     private final ModalInteractionHandler modalHandler;
+    private final ExecutorService dispatchExecutor;
 
     private JDA jda;
 
     /**
-     * Constructs a new SlashCommandManager with the provided PermissionManager.
-     * If no PermissionManager is provided, a default instance will be created.
+     * Constructs a new SlashCommandManager with the provided PermissionManager and the default
+     * dispatch executor.
      *
      * @param permissionManager the PermissionManager to use, or null to create a default one
      */
     SlashCommandManager(PermissionManager permissionManager) {
+        this(permissionManager, null);
+    }
+
+    /**
+     * Constructs a new SlashCommandManager.
+     *
+     * @param permissionManager the PermissionManager to use, or null to create a default one
+     * @param dispatchExecutor  the executor that runs command/component/modal handlers off the event
+     *                          thread, or null to use a default daemon-threaded cached pool
+     */
+    SlashCommandManager(PermissionManager permissionManager, ExecutorService dispatchExecutor) {
         this.registry = new SlashCommandRegistry();
         this.permissionManager = permissionManager != null ? permissionManager : new PermissionManager();
 
@@ -75,6 +98,32 @@ public class SlashCommandManager extends ListenerAdapter {
         this.autocompleteHandler = new AutocompleteHandler(registry);
         this.componentHandler = new ComponentInteractionHandler(registry);
         this.modalHandler = new ModalInteractionHandler(registry);
+        this.dispatchExecutor = dispatchExecutor != null ? dispatchExecutor : defaultDispatchExecutor();
+    }
+
+    private static ExecutorService defaultDispatchExecutor() {
+        AtomicInteger threadCount = new AtomicInteger();
+        return Executors.newCachedThreadPool(task -> {
+            Thread thread = new Thread(task, "slashcommands-dispatch-" + threadCount.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
+    /**
+     * Runs an interaction handler on the dispatch executor so a blocking handler cannot stall the
+     * JDA event thread. Any uncaught error is logged rather than silently swallowed by the executor.
+     *
+     * @param handlerInvocation the handler call to run off the event thread
+     */
+    private void dispatch(Runnable handlerInvocation) {
+        dispatchExecutor.execute(() -> {
+            try {
+                handlerInvocation.run();
+            } catch (Throwable throwable) {
+                logger.error("Uncaught error while dispatching an interaction", throwable);
+            }
+        });
     }
 
     /**
@@ -178,35 +227,38 @@ public class SlashCommandManager extends ListenerAdapter {
     @SubscribeEvent
     public void onShutdown(@NotNull ShutdownEvent event) {
         permissionManager.clearHandlers();
+        dispatchExecutor.shutdown();
     }
 
     @Override
     @SubscribeEvent
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-        slashCommandHandler.handleSlashCommand(event);
+        dispatch(() -> slashCommandHandler.handleSlashCommand(event));
     }
 
     @Override
     @SubscribeEvent
     public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
+        // Answered inline on the event thread: autocomplete is time-sensitive (Discord's ~3s deadline)
+        // and expected to be non-blocking, so it should not queue behind dispatched command handlers.
         autocompleteHandler.handleAutocomplete(event);
     }
 
     @Override
     @SubscribeEvent
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
-        componentHandler.handleButtonInteraction(event);
+        dispatch(() -> componentHandler.handleButtonInteraction(event));
     }
 
     @Override
     @SubscribeEvent
     public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
-        componentHandler.handleStringSelectInteraction(event);
+        dispatch(() -> componentHandler.handleStringSelectInteraction(event));
     }
 
     @Override
     @SubscribeEvent
     public void onModalInteraction(@NotNull ModalInteractionEvent event) {
-        modalHandler.handleModalInteraction(event);
+        dispatch(() -> modalHandler.handleModalInteraction(event));
     }
 }

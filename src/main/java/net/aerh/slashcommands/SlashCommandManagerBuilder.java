@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.marmalade.pattern.Builder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Builder for creating and configuring SlashCommandManager instances.
@@ -33,6 +34,7 @@ public class SlashCommandManagerBuilder extends Builder<SlashCommandManager> {
     private JDA jda;
     private JDABuilder jdaBuilder;
     private PermissionManager permissionManager;
+    private ExecutorService commandExecutor;
 
     private SlashCommandManagerBuilder() {
         this.permissionManager = new PermissionManager();
@@ -87,6 +89,19 @@ public class SlashCommandManagerBuilder extends Builder<SlashCommandManager> {
      */
     public SlashCommandManagerBuilder withPermissionManager(PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
+        return this;
+    }
+
+    /**
+     * Sets the executor used to run command, button, string-select and modal handlers off the JDA
+     * event thread. If not set, a default daemon-threaded cached pool is used and shut down when JDA
+     * shuts down; a supplied executor is left for the caller to manage.
+     *
+     * @param commandExecutor the executor to dispatch handlers on
+     * @return this builder for method chaining
+     */
+    public SlashCommandManagerBuilder withCommandExecutor(ExecutorService commandExecutor) {
+        this.commandExecutor = commandExecutor;
         return this;
     }
 
@@ -179,7 +194,7 @@ public class SlashCommandManagerBuilder extends Builder<SlashCommandManager> {
      */
     @Override
     protected SlashCommandManager construct() {
-        SlashCommandManager manager = new SlashCommandManager(permissionManager);
+        SlashCommandManager manager = new SlashCommandManager(permissionManager, commandExecutor);
 
         // Register configured commands and packages
         if (!commandInstances.isEmpty()) {
